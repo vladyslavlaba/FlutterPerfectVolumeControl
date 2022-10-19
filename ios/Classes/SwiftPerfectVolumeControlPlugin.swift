@@ -4,11 +4,11 @@ import MediaPlayer
 import AVFoundation
 
 public class SwiftPerfectVolumeControlPlugin: NSObject, FlutterPlugin {
-    /// 音量视图
     let volumeView = MPVolumeView();
 
-    /// Flutter 消息通道
     var channel: FlutterMethodChannel?;
+    
+    private var outputVolumeObserver: NSKeyValueObservation?
 
     override init() {
         super.init();
@@ -32,13 +32,18 @@ public class SwiftPerfectVolumeControlPlugin: NSObject, FlutterPlugin {
         case "hideUI":
             self.hideUI(call, result: result);
             break;
+        case "startListeningVolume":
+            self.startListeningVolume(call, result: result);
+            break;
+        case "stopListeningVolume":
+            self.stopListeningVolume(call, result: result);
+            break;
         default:
             result(FlutterMethodNotImplemented);
         }
 
     }
 
-    /// 获得系统当前音量
     public func getVolume(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         do {
             try AVAudioSession.sharedInstance().setActive(true)
@@ -48,64 +53,68 @@ public class SwiftPerfectVolumeControlPlugin: NSObject, FlutterPlugin {
         }
     }
 
-    /// 设置音量
     public func setVolume(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         let volume = ((call.arguments as! [String: Any])["volume"]) as! Double;
+        let fVolume = Float(volume)
         var slider: UISlider?;
-        for item in volumeView.subviews {
-            if item is UISlider {
-                slider = (item as! UISlider);
-                break;
-            }
-        }
+        slider = volumeView.subviews.first(where: { $0 is UISlider }) as? UISlider
 
         if slider == nil {
             result(FlutterError(code: "-1", message: "Unable to get uislider", details: "Unable to get uislider"));
             return;
         }
+        
+        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.01) {
+            slider?.value = fVolume
+            slider?.setValue(fVolume, animated: false)
+        }
 
-        // 异步设置
-        slider!.setValue((Float)(volume), animated: false)
         result(nil);
     }
 
-    /// 隐藏UI
     public func hideUI(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         let hide = ((call.arguments as! [String: Any])["hide"]) as! Bool;
+        
         if hide {
-            volumeView.frame = CGRect(x: -1000, y: -1000, width: 1, height: 1)
-            volumeView.showsRouteButton = false
+            volumeView.frame = .zero
+            volumeView.clipsToBounds = true
             UIApplication.shared.delegate!.window!?.rootViewController!.view.addSubview(volumeView);
         } else {
             volumeView.removeFromSuperview();
         }
+        
         result(nil);
     }
 
-    /// 绑定监听器
     public func bindListener() {
         do {
             try AVAudioSession.sharedInstance().setActive(true)
-            AVAudioSession.sharedInstance().addObserver(self, forKeyPath: "outputVolume", options: [.new, .old], context: nil)
         } catch let error as NSError {
             print("\(error)")
         }
-
-        // 绑定音量监听器
-        NotificationCenter.default.addObserver(self, selector: #selector(self.volumeChangeListener), name: NSNotification.Name(rawValue: "AVSystemController_SystemVolumeDidChangeNotification"), object: nil)
-        UIApplication.shared.beginReceivingRemoteControlEvents();
         
-    }
-
-    /// 音量监听
-    @objc func volumeChangeListener(notification: NSNotification) {
-        let volume = notification.userInfo!["AVSystemController_AudioVolumeNotificationParameter"] as! Float
-        channel?.invokeMethod("volumeChangeListener", arguments: volume)
+        outputVolumeObserver = AVAudioSession.sharedInstance().observe(\.outputVolume) { [weak self] audioSession, _ in
+            self?.channel?.invokeMethod("volumeChangeListener", arguments: audioSession.outputVolume)
+        }
+        
+        UIApplication.shared.beginReceivingRemoteControlEvents();
     }
     
-    /// 音量监听(KVO方式)
-    public override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-        let volume = AVAudioSession.sharedInstance().outputVolume
-        channel?.invokeMethod("volumeChangeListener", arguments: volume)
+    public func startListeningVolume(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch let error as NSError {
+            print("\(error)")
+        }
+        
+        outputVolumeObserver = AVAudioSession.sharedInstance().observe(\.outputVolume) { [weak self] audioSession, _ in
+            self?.channel?.invokeMethod("volumeChangeListener", arguments: audioSession.outputVolume)
+        }
+        
+        UIApplication.shared.beginReceivingRemoteControlEvents();
+    }
+    
+    public func stopListeningVolume(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        outputVolumeObserver = nil
     }
 }

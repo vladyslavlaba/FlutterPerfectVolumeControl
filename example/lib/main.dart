@@ -13,6 +13,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  final _control = PerfectVolumeControl();
+
   TextEditingController _textEditingController = TextEditingController();
 
   StreamSubscription<double> _subscription;
@@ -21,9 +23,10 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     // Bind listener
-    _subscription = PerfectVolumeControl.stream.listen((value) {
+    _subscription = _control.stream.listen((value) {
       _textEditingController.text = "listener: $value";
     });
+    _control.startListeningVolume();
   }
 
   @override
@@ -32,6 +35,8 @@ class _MyAppState extends State<MyApp> {
 
     // Remove listener
     _subscription.cancel();
+    _textEditingController.dispose();
+    _control.dispose();
   }
 
   @override
@@ -57,36 +62,35 @@ class _MyAppState extends State<MyApp> {
                       OutlinedButton(
                         child: Text("hideUI"),
                         onPressed: () async {
-                          PerfectVolumeControl.hideUI = true;
+                          await _control.hideUI(true);
                           _textEditingController.text = "hideUI finish";
                         },
                       ),
                       OutlinedButton(
                         child: Text("showUI"),
                         onPressed: () async {
-                          PerfectVolumeControl.hideUI = false;
+                          await _control.hideUI(false);
                           _textEditingController.text = "showUI finish";
                         },
                       ),
                       OutlinedButton(
                         child: Text("getVolume"),
                         onPressed: () async {
-                          double volume =
-                              await PerfectVolumeControl.getVolume();
+                          double volume = await _control.getVolume();
                           _textEditingController.text = "$volume";
                         },
                       ),
                       OutlinedButton(
                         child: Text("mute"),
                         onPressed: () async {
-                          await PerfectVolumeControl.setVolume(0);
+                          await _control.setVolume(0);
                           _textEditingController.text = "mute finish";
                         },
                       ),
                       OutlinedButton(
                         child: Text("setVolume to 0.3"),
                         onPressed: () async {
-                          await PerfectVolumeControl.setVolume(0.3);
+                          await _control.setVolume(0.3);
                           _textEditingController.text =
                               "setVolume to 0.3 finish";
                         },

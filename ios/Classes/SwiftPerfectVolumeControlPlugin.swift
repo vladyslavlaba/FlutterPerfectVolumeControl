@@ -17,7 +17,6 @@ public class SwiftPerfectVolumeControlPlugin: NSObject, FlutterPlugin {
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = SwiftPerfectVolumeControlPlugin()
         instance.channel = FlutterMethodChannel(name: "perfect_volume_control", binaryMessenger: registrar.messenger())
-        instance.bindListener()
         registrar.addMethodCallDelegate(instance, channel: instance.channel!)
     }
 
@@ -85,20 +84,6 @@ public class SwiftPerfectVolumeControlPlugin: NSObject, FlutterPlugin {
         
         result(nil);
     }
-
-    public func bindListener() {
-        do {
-            try AVAudioSession.sharedInstance().setActive(true)
-        } catch let error as NSError {
-            print("\(error)")
-        }
-        
-        outputVolumeObserver = AVAudioSession.sharedInstance().observe(\.outputVolume) { [weak self] audioSession, _ in
-            self?.channel?.invokeMethod("volumeChangeListener", arguments: audioSession.outputVolume)
-        }
-        
-        UIApplication.shared.beginReceivingRemoteControlEvents();
-    }
     
     public func startListeningVolume(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         do {
@@ -118,6 +103,7 @@ public class SwiftPerfectVolumeControlPlugin: NSObject, FlutterPlugin {
     
     public func stopListeningVolume(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         outputVolumeObserver = nil
+        
         result(nil);
     }
 }

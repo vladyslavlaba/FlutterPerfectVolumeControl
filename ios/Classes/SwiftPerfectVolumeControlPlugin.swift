@@ -112,9 +112,12 @@ public class SwiftPerfectVolumeControlPlugin: NSObject, FlutterPlugin {
         }
         
         UIApplication.shared.beginReceivingRemoteControlEvents();
+        
+        result(nil);
     }
     
     public func stopListeningVolume(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         outputVolumeObserver = nil
+        result(nil);
     }
 }

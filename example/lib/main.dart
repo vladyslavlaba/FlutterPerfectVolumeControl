@@ -17,7 +17,7 @@ class _MyAppState extends State<MyApp> {
 
   TextEditingController _textEditingController = TextEditingController();
 
-  StreamSubscription<double> _subscription;
+  StreamSubscription<VolumeKey> _subscription;
 
   @override
   void initState() {
@@ -71,28 +71,6 @@ class _MyAppState extends State<MyApp> {
                         onPressed: () async {
                           await _control.hideUI(false);
                           _textEditingController.text = "showUI finish";
-                        },
-                      ),
-                      OutlinedButton(
-                        child: Text("getVolume"),
-                        onPressed: () async {
-                          double volume = await _control.getVolume();
-                          _textEditingController.text = "$volume";
-                        },
-                      ),
-                      OutlinedButton(
-                        child: Text("mute"),
-                        onPressed: () async {
-                          await _control.setVolume(0);
-                          _textEditingController.text = "mute finish";
-                        },
-                      ),
-                      OutlinedButton(
-                        child: Text("setVolume to 0.3"),
-                        onPressed: () async {
-                          await _control.setVolume(0.3);
-                          _textEditingController.text =
-                              "setVolume to 0.3 finish";
                         },
                       ),
                     ],

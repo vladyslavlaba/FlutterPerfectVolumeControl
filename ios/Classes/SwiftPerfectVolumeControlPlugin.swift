@@ -10,9 +10,13 @@ public class SwiftPerfectVolumeControlPlugin: NSObject, FlutterPlugin {
     
     private var outputVolumeObserver: NSKeyValueObservation?
     
+    private(set) lazy var originalVolume: Float = {
+        return AVAudioSession.sharedInstance().outputVolume
+    }()
+    
     private var lowerBound: Float = 0.0
     private var upperBound: Float = 1.0
-    private var shouldKeepVolumeInBounds: Bool = false
+    private var shouldKeepVolume: Bool = false
     
     private var lastVolumeUpdate: Float? {
         didSet {
@@ -24,7 +28,7 @@ public class SwiftPerfectVolumeControlPlugin: NSObject, FlutterPlugin {
                     downVolumePressed()
                 }
             }
-            keepVolumeInBounds()
+            keepVolume()
         }
     }
 
@@ -105,11 +109,14 @@ public class SwiftPerfectVolumeControlPlugin: NSObject, FlutterPlugin {
         let lower = ((call.arguments as! [String: Any])["lower"]) as! Double;
         let upper = ((call.arguments as! [String: Any])["upper"]) as! Double;
         
-        shouldKeepVolumeInBounds = shouldKeep
+        shouldKeepVolume = shouldKeep
         lowerBound = Float(lower)
         upperBound = Float(upper)
         
-        keepVolumeInBounds()
+        if originalVolume > upperBound { originalVolume = upperBound }
+        if originalVolume < lowerBound { originalVolume = lowerBound }
+        
+        keepVolume()
         
         result(nil);
     }
@@ -146,13 +153,20 @@ public class SwiftPerfectVolumeControlPlugin: NSObject, FlutterPlugin {
         channel?.invokeMethod("volumeKeyPressed", arguments: "down")
     }
     
-    public func keepVolumeInBounds() {
-        if !shouldKeepVolumeInBounds { return; }
+    public func keepVolume() {
+        if !shouldKeepVolume { return; }
         
         let volume = AVAudioSession.sharedInstance().outputVolume;
+        var newVolume = originalVolume;
         
-        if volume > upperBound { setVolume(upperBound) }
-        if volume < lowerBound { setVolume(lowerBound) }
+        if volume != originalVolume {
+            newVolume = originalVolume
+        }
+        
+        if newVolume > upperBound { newVolume = upperBound }
+        if newVolume < lowerBound { newVolume = lowerBound }
+        
+        setVolume(newVolume)
     }
     
     public func setVolume(_ volume: Float) {

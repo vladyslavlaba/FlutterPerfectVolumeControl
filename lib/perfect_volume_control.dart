@@ -68,7 +68,7 @@ class PerfectVolumeControl {
     assert(upper >= 0.0 && upper <= 1.0);
     assert(lower <= upper);
 
-    await _channel.invokeMethod('setVolumeBounds', {
+    await channel.invokeMethod('setVolumeBounds', {
       'shouldKeep': shouldKeep,
       'lower': lower,
       'upper': upper,
@@ -77,16 +77,16 @@ class PerfectVolumeControl {
 
   /// Hide or show according to [hide]
   Future<void> hideUI(bool hide) async {
-    await _channel.invokeMethod('hideUI', {"hide": hide});
+    await channel.invokeMethod('hideUI', {"hide": hide});
   }
 
   Future<void> startListeningVolume() async {
-    _channel.setMethodCallHandler(_methodCallHandler);
-    await _channel.invokeMethod('startListeningVolume');
+    channel.setMethodCallHandler(_methodCallHandler);
+    await channel.invokeMethod('startListeningVolume');
   }
 
   Future<void> stopListeningVolume() async {
-    await _channel.invokeMethod('stopListeningVolume');
+    await channel.invokeMethod('stopListeningVolume');
   }
 
   void dispose() {

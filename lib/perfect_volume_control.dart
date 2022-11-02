@@ -32,6 +32,8 @@ class PerfectVolumeControl {
 
   static const MethodChannel _channel = MethodChannel('perfect_volume_control');
 
+  final MethodChannel channel;
+
   /// Volume change monitor flow
   final StreamController<VolumeKey> _streamController =
       StreamController.broadcast();
@@ -39,7 +41,9 @@ class PerfectVolumeControl {
   /// Get listener stream
   Stream<VolumeKey> get stream => _streamController.stream;
 
-  PerfectVolumeControl();
+  PerfectVolumeControl([
+    MethodChannel? customMethodChannel,
+  ]) : channel = customMethodChannel ?? _channel;
 
   /// method invoke handler
   Future<dynamic> _methodCallHandler(call) async {

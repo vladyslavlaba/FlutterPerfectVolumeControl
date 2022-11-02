@@ -82,9 +82,6 @@ public class PerfectVolumeControlPlugin implements FlutterPlugin, MethodCallHand
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, flag);
     }
 
-    /**
-     * 隐藏UI
-     */
     public void hideUI(@NonNull MethodCall call, @NonNull Result result) {
         this.hideUI = call.argument("hide");
         result.success(null);
@@ -135,9 +132,12 @@ public class PerfectVolumeControlPlugin implements FlutterPlugin, MethodCallHand
     }
 
     private class VolumeReceiver extends BroadcastReceiver {
+        private static final String VOLUME_CHANGED_ACTION = "android.media.VOLUME_CHANGED_ACTION";
+
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (intent.getAction().equals("android.media.VOLUME_CHANGED_ACTION")) {
+
+            if (intent.getAction().equals(VOLUME_CHANGED_ACTION)) {
                 int current = getVolume();
                 volumeBoundariesKeeper.keepVolume();
 
